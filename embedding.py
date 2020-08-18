@@ -6,20 +6,22 @@ class Embedding:
 
     def __init__(self, dataset: pd.DataFrame):
         self.dataset = dataset
-        self.corpus = dataset["TEXTCONTENT"] + dataset["TITLE"]
-
-    def extracte(self):
-        self.extractor = WordExtractor()
-        self.extractor.train(self.corpus)
-        self.words = self.extractor.extract()
+        # self.fasttext = FastText()
 
     def tokenize(self, sentence:str) -> list:
-        self.tokenizer = LTokenizer(scores=self.words)
+        self.tokenizer = LTokenizer()
         return self.tokenizer.tokenize(sentence)
 
 if __name__ == "__main__":
     dataset = pd.read_json("data/20200101.json")    
-    print(dataset["TITLE"][0])
     embedding = Embedding(dataset)
-    embedding.extracte()
-    print(embedding.tokenize(dataset["TITLE"][0]))
+
+    # Tokenize
+    dataset["TITLE"] = dataset["TITLE"].apply(lambda text: embedding.tokenize(text))
+    dataset["TEXTCONTENT"] = dataset["TEXTCONTENT"].apply(lambda text: embedding.tokenize(text))    
+    print(dataset["TITLE"][0])
+    print()
+    print(dataset["TITLE"][3])
+    print(dataset["TEXTCONTENT"][3])
+
+    # Fasttext embedding
