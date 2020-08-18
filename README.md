@@ -1,5 +1,5 @@
 # Sequence to Sequence 문장요약
-by. gwkim<youlive789@gmail.com>
+by. gwkim <youlive789@gmail.com>
   
 장문의 텍스트를 적절한 크기의 텍스트로 요약하는 딥러닝 모델입니다.
 Seq2Seq를 활용하여 요약할 문장과 요약한 문장을 지도학습 형태로 학습합니다.
