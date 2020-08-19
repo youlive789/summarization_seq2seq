@@ -1,4 +1,5 @@
 import os
+import pickle
 import numpy as np
 import pandas as pd
 from soynlp.word import WordExtractor
@@ -9,20 +10,23 @@ from gensim.models.fasttext import FastText
 class Embedding:
 
     MODEL_SAVED_DIR = "saved_model/fasttext.model"
+    TOKENIZER_SAVED_DIR = "saved_model\\tokenizer.pkl"
 
     def __init__(self, dataset:pd.DataFrame, word_train:bool):
         self.dataset = dataset
         self.corpus = dataset["TITLE"] + dataset["TEXTCONTENT"]
 
-        if os.path.isfile(self.MODEL_SAVED_DIR) or word_train == False:
+        if word_train == False:
             self.fasttext = FastText.load(self.MODEL_SAVED_DIR)
+            self._load_tokenizer()
+            self._tokenize()
         else:
-            self.fasttext = FastText(size=100, window=3, min_count=1)
             self._extracte()
             self._tokenize()
+            self._save_tokenizer()
             self._train()
 
-        self.idx_dict = dict(zip(np.arange(4, len(self.fasttext.wv.syn0) + 4), self.fasttext.wv.index2word))
+        self.idx_word_dict = dict(zip(np.arange(4, len(self.fasttext.wv.vectors) + 4), self.fasttext.wv.index2word))
 
     def _extracte(self) -> None:
         self.extractor = WordExtractor()
@@ -32,18 +36,26 @@ class Embedding:
         self.tokenizer = LTokenizer(scores=self.cohesion_score)
 
     def _tokenize(self) -> pd.DataFrame:
+        self.corpus = self.corpus.apply(lambda text : self.tokenizer.tokenize(text))
         self.dataset["TITLE"] = self.dataset["TITLE"].apply(lambda text: self.tokenizer.tokenize(text))
         self.dataset["TEXTCONTENT"] = self.dataset["TEXTCONTENT"].apply(lambda text: self.tokenizer.tokenize(text))
 
+    def _save_tokenizer(self) -> None:
+        with open(self.TOKENIZER_SAVED_DIR, "wb") as f:
+            pickle.dump(self.tokenizer, f, pickle.HIGHEST_PROTOCOL)
+
+    def _load_tokenizer(self) -> None:
+        with open(self.TOKENIZER_SAVED_DIR, "rb") as f:
+            self.tokenizer = pickle.load(f)
+
     def _train(self) -> None:
-        self.fasttext.build_vocab(sentences=self.corpus)
-        self.fasttext.train(sentences=self.corpus, total_examples=len(self.corpus), epochs=10)
+        self.fasttext = FastText(sentences=self.corpus, size=100, window=5, min_count=1, iter=100)
         self.fasttext.save(self.MODEL_SAVED_DIR)
 
     def dataset_to_embedding(self) -> pd.DataFrame:
         self.dataset["TITLE_IDX"] = self.dataset["TITLE"].apply(lambda tokenized: [self._word_to_idx(token) for token in tokenized])
-        self.dataset["TITLE"] = self.dataset["TITLE"].apply(lambda tokenized: [self.fasttext[token] for token in tokenized])
-        self.dataset["TEXTCONTENT"] = self.dataset["TEXTCONTENT"].apply(lambda tokenized: [self.fasttext[token] for token in tokenized])
+        self.dataset["TITLE"] = self.dataset["TITLE"].apply(lambda tokenized: [self._word_to_vec(token) for token in tokenized])
+        self.dataset["TEXTCONTENT"] = self.dataset["TEXTCONTENT"].apply(lambda tokenized: [self._word_to_vec(token) for token in tokenized])
         return self.dataset 
 
     def embedding_to_sentence(self, target: list or np.array) -> list:
@@ -54,7 +66,7 @@ class Embedding:
         elif np.array_equal(vector, np.eye(100, dtype=np.float32)[1]): return '<STA>'
         elif np.array_equal(vector, np.eye(100, dtype=np.float32)[2]): return '<EOS>'
         elif np.array_equal(vector, np.eye(100, dtype=np.float32)[3]): return '<UNK>'
-        return self.fasttext.wv.similar_by_vector(vector)[0][0]
+        return self.fasttext.wv.most_similar(positive=[vector], topn=1)[0][0]
 
     def _word_to_vec(self, word) -> np.array:
         try :
@@ -68,12 +80,12 @@ class Embedding:
     
     def _word_to_idx(self, word) -> int:      
         try :
-            return list(self.idx_dict.keys())[list(self.idx_dict.values()).index(word)]
+            return list(self.idx_word_dict.keys())[list(self.idx_word_dict.values()).index(word)]
         except :
             return 3
     
     def _idx_to_word(self, idx) -> str:
-        return self.idx_dict[idx]
+        return self.idx_word_dict[idx]
 
 if __name__ == "__main__":
     # tokenize
@@ -84,6 +96,5 @@ if __name__ == "__main__":
     dataset = embedding.dataset_to_embedding()
 
     # reverse
-    print(dataset["TITLE"][5])
-    print(embedding.embedding_to_sentence(embedding.dataset["TITLE"][5]))
+    print(embedding.embedding_to_sentence(dataset["TITLE"][0]))
     
