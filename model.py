@@ -41,7 +41,15 @@ class Seq2Seq(tf.keras.Model):
             return y
         else:
             # 추론 중에는 디코더에 패딩으로 채운 값을 입력으로 줘야한다.
-            pass
+            x = inputs
+            h, c = self.enc(x)
+
+            y = tf.convert_to_tensor(np.zeros((1, 10, 100)), dtype=tf.float32)
+
+            y, h, c = self.dec((y, h, c))
+            y = tf.cast(tf.argmax(y, axis=-1), dtype=tf.int32)
+
+            return tf.reshape(y, (1, 10))
 
 @tf.function
 def train_step(model, encoder_input, decoder_input, decoder_output, loss_object, optimizer, train_loss, train_accuracy):
@@ -53,6 +61,10 @@ def train_step(model, encoder_input, decoder_input, decoder_output, loss_object,
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
     train_loss(loss)
     train_accuracy(decoder_output, predictions)
+
+@tf.function
+def test_step(model, inputs):
+    return model(inputs, training=False)
 
 if __name__ == "__main__":
     encoder_input = np.zeros((1, 10, 100))
@@ -67,10 +79,13 @@ if __name__ == "__main__":
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
-    for epoch in range(300):
+    for epoch in range(150):
         train_step(model, encoder_input, decoder_input, decoder_output, loss_obejct, optimizer, train_loss, train_accuracy)
         template = 'Epoch {}, Loss: {}, Accuracy: {}'
         print(template.format(epoch + 1, train_loss.result(), train_accuracy.result() * 100))
+
+    prediction = test_step(model, encoder_input)
+    print("결과 :", prediction)
 
     
 
