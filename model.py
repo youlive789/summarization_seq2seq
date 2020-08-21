@@ -55,9 +55,9 @@ def train_step(model, encoder_input, decoder_input, decoder_output, loss_object,
     train_accuracy(decoder_output, predictions)
 
 if __name__ == "__main__":
-    encoder_input = np.empty((1, 10, 100))
-    decoder_input = np.empty((1, 10, 100))
-    decoder_output = np.zeros((1, 10))
+    encoder_input = np.zeros((1, 10, 100))
+    decoder_input = np.zeros((1, 10, 100))
+    decoder_output = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]])
 
     model = Seq2Seq()
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
-    for epoch in range(1):
+    for epoch in range(300):
         train_step(model, encoder_input, decoder_input, decoder_output, loss_obejct, optimizer, train_loss, train_accuracy)
         template = 'Epoch {}, Loss: {}, Accuracy: {}'
         print(template.format(epoch + 1, train_loss.result(), train_accuracy.result() * 100))
