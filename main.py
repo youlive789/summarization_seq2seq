@@ -16,24 +16,23 @@ if __name__ == "__main__":
     encoder_input = np.array([x.reshape(32, 100) for x in train["TEXTCONTENT"]])
     decoder_input = np.array([x.reshape(10, 100) for x in train["TITLE"]])
     decoder_output = np.array([x.reshape(10) for x in train["TITLE_IDX"]])
+    testset_input = np.array([x.reshape(32, 100) for x in test["TEXTCONTENT"]])
 
     batch_size = 16
     batch_count = int(len(encoder_input) / batch_size)
 
-    # 모델 구조 Dense layer가 10이아닌  
-    # vocabulary size 로 구성해야함.
-
-    model = Seq2Seq()
+    vocab_length = len(sd.embedding.idx_word_dict)
+    model = Seq2Seq(vocab_length = vocab_length)
     loss_obejct = tf.keras.losses.SparseCategoricalCrossentropy()
     optimizer = tf.keras.optimizers.Adam()
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
-    for epoch in range(5):
+    for epoch in range(10):
         for idx in range(batch_count):
             train_step(model, encoder_input[idx:idx*batch_size], decoder_input[idx:idx*batch_size], decoder_output[idx:idx*batch_size], loss_obejct, optimizer, train_loss, train_accuracy)
             template = 'Epoch {}, Loss: {}, Accuracy: {}'
             print(template.format(epoch + 1, train_loss.result(), train_accuracy.result() * 100))
 
-    prediction = test_step(model, test["TEXTCONTENT"][0])
-    print(prediction)
+    prediction = test_step(model, testset_input[0:1]).numpy().tolist()[0]
+    print([sd.embedding._idx_to_word(x) for x in prediction])

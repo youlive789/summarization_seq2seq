@@ -27,6 +27,10 @@ class Embedding:
             self._train()
 
         self.idx_word_dict = dict(zip(np.arange(4, len(self.fasttext.wv.vectors) + 4), self.fasttext.wv.index2word))
+        self.idx_word_dict[0] = '<PAD>'
+        self.idx_word_dict[1] = '<STA>'
+        self.idx_word_dict[2] = '<EOS>'
+        self.idx_word_dict[3] = '<UNK>'
 
     def _extracte(self) -> None:
         self.extractor = WordExtractor()
@@ -85,7 +89,7 @@ class Embedding:
         return sentence
 
     def _vec_to_word(self, vector) -> str:
-        if np.array_equal(vector, np.eye(100, dtype=np.float32)[0]): return '<PAD>'
+        if np.array_equal(vector, np.eye(100, dtype=np.float32)[0]):   return '<PAD>'
         elif np.array_equal(vector, np.eye(100, dtype=np.float32)[1]): return '<STA>'
         elif np.array_equal(vector, np.eye(100, dtype=np.float32)[2]): return '<EOS>'
         elif np.array_equal(vector, np.eye(100, dtype=np.float32)[3]): return '<UNK>'

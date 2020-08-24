@@ -17,10 +17,11 @@ class Encoder(tf.keras.Model):
         return h, c
 
 class Decoder(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, vocab_length):
         super(Decoder, self).__init__()
+        self.vocab_length = vocab_length
         self.lstm = LSTM(128, return_state=True, return_sequences=True)
-        self.dense = Dense(10, activation='softmax')
+        self.dense = Dense(self.vocab_length, activation='softmax')
 
     def call(self, inputs, training=False, mask=None):
         x, h, c = inputs
@@ -28,10 +29,10 @@ class Decoder(tf.keras.Model):
         return self.dense(x), h, c
         
 class Seq2Seq(tf.keras.Model):
-    def __init__(self):
+    def __init__(self, vocab_length):
         super(Seq2Seq, self).__init__()
         self.enc = Encoder()
-        self.dec = Decoder()
+        self.dec = Decoder(vocab_length = vocab_length)
 
     def call(self, inputs, training=False, mask=None):
         if training is True:
