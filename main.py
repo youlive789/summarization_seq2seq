@@ -16,9 +16,12 @@ if __name__ == "__main__":
     encoder_input = np.array([x.reshape(32, 100) for x in train["TEXTCONTENT"]])
     decoder_input = np.array([x.reshape(10, 100) for x in train["TITLE"]])
     decoder_output = np.array([x.reshape(10) for x in train["TITLE_IDX"]])
-    
+
     batch_size = 16
     batch_count = int(len(encoder_input) / batch_size)
+
+    # 모델 구조 Dense layer가 10이아닌  
+    # vocabulary size 로 구성해야함.
 
     model = Seq2Seq()
     loss_obejct = tf.keras.losses.SparseCategoricalCrossentropy()
