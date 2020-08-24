@@ -53,13 +53,36 @@ class Embedding:
         self.fasttext.save(self.MODEL_SAVED_DIR)
 
     def dataset_to_embedding(self) -> pd.DataFrame:
-        self.dataset["TITLE_IDX"] = self.dataset["TITLE"].apply(lambda tokenized: [self._word_to_idx(token) for token in tokenized])
-        self.dataset["TITLE"] = self.dataset["TITLE"].apply(lambda tokenized: [self._word_to_vec(token) for token in tokenized])
-        self.dataset["TEXTCONTENT"] = self.dataset["TEXTCONTENT"].apply(lambda tokenized: [self._word_to_vec(token) for token in tokenized])
+        self.dataset["TITLE_IDX"] = self.dataset["TITLE"].apply(self._sentence_length_fix, args=[10])
+        self.dataset["TITLE"] = self.dataset["TITLE"].apply(self._sentence_length_fix, args=[10])
+        self.dataset["TEXTCONTENT"] = self.dataset["TEXTCONTENT"].apply(self._sentence_length_fix, args=[32])
+
+        for index, value in self.dataset["TITLE_IDX"].iteritems():
+            assert len(value) == 10
+
+        for index, value in self.dataset["TITLE"].iteritems():
+            assert len(value) == 10
+
+        for index, value in self.dataset["TEXTCONTENT"].iteritems():
+            assert len(value) == 32
+
+        self.dataset["TITLE_IDX"] = self.dataset["TITLE_IDX"].apply(lambda tokenized: np.array([self._word_to_idx(token) for token in tokenized]))
+        self.dataset["TITLE"] = self.dataset["TITLE"].apply(lambda tokenized: np.array([self._word_to_vec(token) for token in tokenized]))
+        self.dataset["TEXTCONTENT"] = self.dataset["TEXTCONTENT"].apply(lambda tokenized: np.array([self._word_to_vec(token) for token in tokenized]))
+        
         return self.dataset 
 
     def embedding_to_sentence(self, target: list or np.array) -> list:
         return [self._vec_to_word(vector) for vector in target]
+
+    def _sentence_length_fix(self, sentence: list or np.array, length: int) -> list or np.array:
+        sentence_length = len(sentence)
+        if sentence_length < length:
+            while len(sentence) < length:
+                sentence.append('<PAD>')
+        elif sentence_length > length:
+            sentence = sentence[:length]
+        return sentence
 
     def _vec_to_word(self, vector) -> str:
         if np.array_equal(vector, np.eye(100, dtype=np.float32)[0]): return '<PAD>'
