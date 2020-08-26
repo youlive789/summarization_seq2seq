@@ -10,7 +10,7 @@ from data import SummarizationDataset
 if __name__ == "__main__":
     
     dataset = pd.read_json("data/20200101.json")
-    sd = SummarizationDataset(dataset, False)
+    sd = SummarizationDataset(dataset=dataset, word_train=True)
     train, test = sd.get_embedded_dataset()
 
     encoder_input = np.array([x.reshape(32, 100) for x in train["TEXTCONTENT"]])
