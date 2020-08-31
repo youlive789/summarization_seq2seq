@@ -15,6 +15,6 @@ class SummarizationDataset:
         return train, test
 
 if __name__ == "__main__":
-    dataset = pd.read_json("data/20200101.json")
+    dataset = pd.read_json("data/blog.json", encoding="utf-8")
     sd = SummarizationDataset(dataset, True)
     train, test = sd.get_embedded_dataset()

@@ -116,7 +116,7 @@ class Embedding:
 
 if __name__ == "__main__":
     # tokenize
-    dataset = pd.read_json("data/20200101.json")    
+    dataset = pd.read_json("data/blog.json")    
     embedding = Embedding(dataset=dataset, word_train=False)
 
     # embedding
